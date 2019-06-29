@@ -3,7 +3,7 @@ Java MP3 Decoder / Player
 This project is based on JavaZOOM (http://www.javazoom.net/javalayer/javalayer.html).
 It is licensed under LGPL (see LICENSE.txt).
 
-The credit for the mp3 decodor goes to the original author. The code base can be found at [mp3transform](https://code.google.com/archive/p/mp3transform/source/default/source).
+The credit of the mp3 decoder logic goes to the original author. The code base can be found at [mp3transform](https://code.google.com/archive/p/mp3transform/source/default/source).
 
 I modernized the code base, simplified the code by adopting features in Java 8 and Gradle-5.0 and completely refactor the GUI.
 
