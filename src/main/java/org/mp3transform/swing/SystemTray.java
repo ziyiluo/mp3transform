@@ -6,8 +6,8 @@ import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 public class SystemTray {
     private Player player;
@@ -21,9 +21,15 @@ public class SystemTray {
     private void readIcon() {
         if (!GraphicsEnvironment.isHeadless()) {
             try {
-                String fileName = getClass().getResource("/mp3-play.png").getFile();
-                byte[] imageData = Files.readAllBytes(Paths.get(fileName));
-                icon = Toolkit.getDefaultToolkit().createImage(imageData);
+                byte[] buffer = new byte[1024];
+                int len;
+                InputStream fileStream = getClass().getResourceAsStream("/mp3-play.png");
+                ByteArrayOutputStream fileByteStream = new ByteArrayOutputStream();
+                while ((len = fileStream.read(buffer)) != -1) {
+                    // write bytes from the buffer into output stream
+                    fileByteStream.write(buffer, 0, len);
+                }
+                icon = Toolkit.getDefaultToolkit().createImage(fileByteStream.toByteArray());
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -51,7 +57,7 @@ public class SystemTray {
             itemNext.setFont(player.getFont());
             menuConsole.add(itemNext);
 
-            MenuItem itemPause = new MenuItem("Pause");
+            MenuItem itemPause = new MenuItem("Pause/Resume");
             itemPause.setActionCommand("pause");
             itemPause.addActionListener(player.getActionListener());
             itemPause.setFont(player.getFont());

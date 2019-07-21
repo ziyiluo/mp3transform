@@ -12,8 +12,7 @@ repositories {
 }
 
 dependencies {
-    // This dependency is found on compile classpath of this component and consumers.
-    implementation 'com.google.guava:guava:27.0.1-jre'
+    compile group: 'com.mpatric', name: 'mp3agic', version: '0.8.1'
 }
 
 // Define the main class for the application
@@ -24,3 +23,14 @@ jar {
         attributes 'Main-Class': "${mainClassName}"
     }
 }
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': "${mainClassName}"
+    }
+    baseName = 'mp3transform-fat'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+build.dependsOn fatJar

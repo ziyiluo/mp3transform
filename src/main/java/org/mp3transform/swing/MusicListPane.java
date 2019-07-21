@@ -10,6 +10,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileSystemView;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -22,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.prefs.Preferences;
@@ -35,8 +37,10 @@ public class MusicListPane extends JPanel {
 
     private ActionListener playListActionListener;
     private MouseAdapter jListMouseAdapter;
+    private ListSelectionListener jListSelectionListener;
 
     private static final String MP3_SUFFIX = ".mp3";
+    private volatile List<File> currentSelected = Collections.emptyList();
 
     private static String getTitle(String name) {
         if (name.toLowerCase().endsWith(MP3_SUFFIX)) {
@@ -62,6 +66,7 @@ public class MusicListPane extends JPanel {
             jListStr.setLayoutOrientation(JList.VERTICAL);
             jListStr.setVisibleRowCount(-1);
             jListStr.addMouseListener(jListMouseAdapter);
+            jListStr.addListSelectionListener(jListSelectionListener);
         }
     }
 
@@ -153,9 +158,26 @@ public class MusicListPane extends JPanel {
                 if (f.isDirectory()) {
                     refreshCurrentTab(f.toPath());
                 } else if (isMp3(f)) {
-                    List<File> musicList = currentTab.jListFile.subList(currentSongIndex, currentTab.jListFile.size())
-                            .stream().filter(MusicListPane::isMp3).collect(Collectors.toList());
-                    player.playList(musicList);
+                    // Cannot use Collections.singletonList() here because the Play thread edits the list
+                    // and singletonList is immutable.
+                    player.playList(new ArrayList<>(Collections.singletonList(f)));
+                }
+            }
+        };
+        jListSelectionListener = e -> {
+            if (!e.getValueIsAdjusting()) {
+                Tab currentTab = tabContents.get(playListPane.getSelectedIndex());
+                List<File> selectedFilesUnfiltered = new ArrayList<>();
+
+                for (int i : currentTab.jListStr.getSelectedIndices()) {
+                    selectedFilesUnfiltered.add(currentTab.jListFile.get(i));
+                }
+                currentSelected = selectedFilesUnfiltered.stream().filter(File::isFile)
+                        .filter(MusicListPane::isMp3)
+                        .collect(Collectors.toList());
+
+                if (player.getPlayStatus() == PlayStatus.STOP) {
+                    player.setPlayStatus(null, PlayStatus.STOP);
                 }
             }
         };
@@ -247,6 +269,10 @@ public class MusicListPane extends JPanel {
         initActionListener();
         initPane();
         initTabs(player.getPrefs());
+    }
+
+    List<File> getCurrentSelected() {
+        return currentSelected;
     }
 
     private void refreshCurrentTab(Path currentDir) {

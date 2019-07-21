@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -37,6 +37,7 @@ public class Player {
     private JButton stopButton;
     private JFrame mainFrame;
     private SystemTray systemTray;
+    private MusicListPane musicListPane;
 
     private Font font;
     private ServerSocket serverSocket;
@@ -74,6 +75,7 @@ public class Player {
         initEventListener();
         initFrame();
         systemTray = new SystemTray(this);
+        currentStatus = PlayStatus.STOP;
     }
 
     void playList(List<File> fileList) {
@@ -98,10 +100,7 @@ public class Player {
             if ("exit".equals(command)) {
                 exit();
             } else if ("play".equals(command)) {
-                if (currentPlaying != null) {
-                    playList(Collections.singletonList(currentPlaying));
-                    setPlayStatus(currentPlaying, PlayStatus.PLAYING);
-                }
+                playList(new ArrayList<>(musicListPane.getCurrentSelected()));
             } else if ("stop".equals(command)) {
                 if (thread != null) {
                     thread.stopPlaying();
@@ -203,7 +202,7 @@ public class Player {
         gbc.gridy = 1;
         panel.add(emptyPanel, gbc);
 
-        MusicListPane musicListPane = new MusicListPane(this);
+        musicListPane = new MusicListPane(this);
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = 4;
@@ -285,9 +284,13 @@ public class Player {
             case STOP:
                 playButton.setText(PlayStatus.STOP.getNextStep());
                 playButton.setActionCommand("play");
-                playButton.setEnabled(currentPlaying != null);
+                playButton.setEnabled(!musicListPane.getCurrentSelected().isEmpty());
                 stopButton.setEnabled(false);
         }
         mainFrame.setTitle(currentPlaying == null ? TITLE : playingText);
+    }
+
+    PlayStatus getPlayStatus() {
+        return currentStatus;
     }
 }
